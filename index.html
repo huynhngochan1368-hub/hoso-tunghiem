@@ -3,256 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hồ Sơ Tử Nghiệm - Tactical Detective</title>
+    <title>Detective Core - Pro Scorer</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --neon-red: #ff3131; --neon-blue: #00d4ff; --gold: #ffd700;
-            --bg: #05050a; --glass: rgba(15, 15, 25, 0.95);
-        }
+        :root { --neon-red: #ff3131; --neon-blue: #00d4ff; --gold: #ffd700; --bg: #05050a; }
         body { font-family: 'Quicksand', sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .container { width: 95%; max-width: 500px; background: var(--glass); padding: 1.5rem; border-radius: 24px; border: 1px solid rgba(0, 212, 255, 0.2); position: relative; backdrop-filter: blur(15px); text-align: center; }
+        .container { width: 95%; max-width: 500px; background: rgba(15, 15, 25, 0.95); padding: 1.5rem; border-radius: 24px; border: 1px solid var(--neon-blue); text-align: center; box-shadow: 0 0 30px rgba(0, 212, 255, 0.2); }
         .screen { display: none; animation: fadeIn 0.4s ease; }
         .active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Stats & Timer */
-        .stats-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; font-size: 0.8rem; }
-        #timer-bar { width: 100%; height: 5px; background: #222; margin-bottom: 15px; border-radius: 3px; overflow: hidden; }
-        #timer-progress { width: 100%; height: 100%; background: var(--neon-blue); transition: width 1s linear; }
+        /* Stats & Scoring */
+        .stats-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.7rem; font-family: 'Space Mono'; }
+        .score-display { color: var(--gold); font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
+        .timer { color: var(--neon-red); }
 
-        /* Items */
-        .item-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
-        .item-card { background: rgba(255,255,255,0.05); border: 1px solid #333; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 0.7rem; transition: 0.3s; }
-        .item-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.1); box-shadow: 0 0 10px var(--gold); }
+        /* Inventory */
+        .inventory-box { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid #222; }
+        .item { cursor: pointer; font-size: 1.5rem; transition: 0.3s; opacity: 0.3; position: relative; filter: grayscale(1); }
+        .item.available { opacity: 1; filter: grayscale(0) drop-shadow(0 0 5px var(--neon-blue)); }
+        .item-count { position: absolute; top: -5px; right: -10px; font-size: 0.7rem; background: var(--neon-red); color: #fff; padding: 2px 6px; border-radius: 10px; }
+
+        .lore-box { background: #000; padding: 15px; border-radius: 12px; border-left: 4px solid var(--neon-blue); margin-bottom: 15px; text-align: left; font-size: 0.9rem; line-height: 1.5; }
+        .hint-box { display: none; background: rgba(255, 49, 49, 0.1); border: 1px dashed var(--neon-red); color: #ff8e8e; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.8rem; }
         
-        #use-item-btn { background: var(--gold); color: #000; font-size: 0.7rem; width: auto; padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        #use-item-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #555; }
-
-        .lore-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border-left: 3px solid var(--neon-blue); margin-bottom: 10px; font-size: 0.8rem; text-align: left; min-height: 40px; }
-        button { width: 100%; padding: 12px; margin: 5px 0; background: var(--neon-red); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { opacity: 0.8; }
-        .option-btn { background: transparent; border: 1px solid var(--neon-blue); }
-        .wrong { opacity: 0.3; pointer-events: none; border-color: #444; color: #444; }
+        button { width: 100%; padding: 12px; margin: 6px 0; background: transparent; border: 1px solid var(--neon-blue); color: white; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background: var(--neon-blue); color: #000; }
+        .btn-wrong-hidden { opacity: 0; pointer-events: none; }
+        
+        .result-table { width: 100%; margin: 15px 0; font-size: 0.9rem; text-align: left; border-collapse: collapse; }
+        .result-table td { padding: 8px; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="start-screen" class="screen active">
-            <h1 style="color:var(--neon-blue);">DETECTIVE CORE</h1>
-            <input type="text" id="username" placeholder="MẬT DANH..." style="width:70%; padding:10px; border-radius:8px; border:1px solid #333; background:#000; color:white; text-align:center; margin-bottom: 10px;">
-            
-            <p style="font-size: 0.8rem; margin-top: 15px;">CHỌN TRANG BỊ TRỢ GIÚP (HỒI MỖI MÀN):</p>
-            <div class="item-grid">
-                <div class="item-card" onclick="selectItem('kính lúp', this)">🔍<br>Kính Lúp<br>(Xóa 1 sai)</div>
-                <div class="item-card" onclick="selectItem('máy quét', this)">📟<br>Máy Quét<br>(+15s time)</div>
-                <div class="item-card" onclick="selectItem('sổ tay', this)">📓<br>Sổ Tay<br>(+1 Mạng)</div>
-            </div>
-            
-            <button onclick="startGame()">VÀO HIỆN TRƯỜNG</button>
-        </div>
-
-        <div id="game-screen" class="screen">
-            <div class="stats-bar">
-                <div id="lives-display">❤️❤️❤️</div>
-                <div style="color: var(--gold);"><span id="coin-val">0</span> 🪙</div>
-                <div style="color: var(--neon-blue);">⏱️ <span id="timer-text">30</span>s</div>
-            </div>
-            <div id="timer-bar"><div id="timer-progress"></div></div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div id="level-title" style="color:var(--neon-blue); font-size: 0.8rem; font-weight: bold;"></div>
-                <button id="use-item-btn" onclick="useItem()">SỬ DỤNG VẬT PHẨM</button>
-            </div>
-
-            <div class="lore-box" id="lore-text"></div>
-            <div id="question-text" style="font-weight: bold; margin-bottom: 15px;"></div>
-            <div id="options-container"></div>
-        </div>
-
-        <div id="victory-screen" class="screen">
-            <h1 style="color:var(--gold);">MISSION COMPLETE</h1>
-            <div id="final-stats"></div>
-            <button onclick="location.reload()">LÀM NHIỆM VỤ MỚI</button>
-        </div>
+<div class="container">
+    <div id="start-screen" class="screen active">
+        <h1 style="color:var(--neon-blue)">DETECTIVE CORE</h1>
+        <p style="color:#666; font-size: 0.8rem;">SCORING SYSTEM ACTIVE</p>
+        <input type="text" id="username" placeholder="MẬT DANH..." style="width:80%; padding:12px; background:#000; color:#fff; border:1px solid #333; border-radius:10px; margin-bottom:20px; text-align:center;">
+        <button onclick="startGame()">BẮT ĐẦU ĐIỀU TRA</button>
     </div>
 
-    <script>
-        let currentLvl = 0, lives = 3, coins = 0, timeLeft = 30, timerInterval;
-        let selectedItem = null;
-        let itemUsedInThisLevel = false;
-        const quizData = [
-    // --- CHƯƠNG 1: HIỆN TRƯỜNG SƠ CẤP ---
-    { t: "MÀN 1", l: "Vết sơn Đỏ đè lên Vàng tại cửa ra vào.", q: "Màu sắc của kẻ tình nghi là?", opt: ["Tím", "Cam", "Lục", "Xám"], a: 1 },
-    { t: "MÀN 2", l: "Nạn nhân bị đầu độc lúc 12h trưa, cốc cafe trên bàn vẫn còn bốc hơi nóng.", q: "Thời điểm thám tử đến là?", opt: ["3h chiều", "6h tối", "12h05 trưa", "9h sáng"], a: 2 },
-    { t: "MÀN 3", l: "Cửa kính bị vỡ từ bên trong, mảnh vỡ văng hết ra sân vườn.", q: "Kẻ trộm đột nhập từ đâu?", opt: ["Từ ngoài vào", "Từ trong ra", "Qua ống khói", "Không có trộm"], a: 1 },
-    { t: "MÀN 4", l: "Nạn nhân viết chữ 'H' bằng tay trái, nhưng chiếc đồng hồ lại đeo ở tay trái.", q: "Điểm bất thường là?", opt: ["Đeo đồng hồ", "Viết chữ", "Thuận tay", "Không có"], a: 2 },
-    { t: "MÀN 5", l: "Bóng của cái cây đổ về phía Đông rất dài.", q: "Lúc này là thời điểm nào?", opt: ["Bình minh", "Hoàng hôn", "Chính ngọ", "Nửa đêm"], a: 1 },
-    { t: "MÀN 6", l: "Dấu chân cỡ 43 tại hiện trường, trong khi chủ nhà đi cỡ 39.", q: "Kẻ đột nhập là?", opt: ["Chủ nhà", "Người lạ", "Trẻ em", "Thú cưng"], a: 1 },
+    <div id="game-screen" class="screen">
+        <div class="score-display">SCORE: <span id="score-val">0</span></div>
+        <div class="stats-bar">
+            <div id="chapter-name">CHƯƠNG I</div>
+            <div class="timer">THỜI GIAN: <span id="time-val">0</span>s</div>
+        </div>
 
-    // --- CHƯƠNG 2: MẬT MÃ LOGIC ---
-    { t: "MÀN 7", l: "Mật mã Caesar (Lùi 1 bước): D-P-V.", q: "Thiết bị bị đánh cắp?", opt: ["CPU", "BOU", "CAT", "RAM"], a: 0 },
-    { t: "MÀN 8", l: "Số nhị phân '1010' ghi trên tường.", q: "Con số này ở hệ thập phân là?", opt: ["8", "10", "12", "14"], a: 1 },
-    { t: "MÀN 9", l: "Mật mã bàn phím điện thoại cổ: 2-2-2.", q: "Chữ cái tương ứng là?", opt: ["A", "B", "C", "D"], a: 2 },
-    { t: "MÀN 10", l: "Dòng chữ viết ngược qua gương: 'MAI'.", q: "Tên thật của nạn nhân là?", opt: ["IAM", "AMI", "MIA", "MAI"], a: 0 },
-    { t: "MÀN 11", l: "Số thứ tự bảng chữ cái: 1-16-16-12-5.", q: "Từ giải mã được là?", opt: ["APPLE", "BANAN", "ORANG", "GRAPE"], a: 0 },
-    { t: "MÀN 12", l: "Mật mã đảo ngược: 'NEPO'.", q: "Trạng thái của cửa?", opt: ["Đóng", "Mở", "Khóa", "Hỏng"], a: 1 },
+        <div class="inventory-box">
+            <div class="item" id="item-glass" onclick="useItem('glass')">🔍<span class="item-count" id="cnt-glass">1</span></div>
+            <div class="item" id="item-kit" onclick="useItem('kit')">🧪<span class="item-count" id="cnt-kit">0</span></div>
+            <div class="item" id="item-note" onclick="useItem('note')">📖<span class="item-count" id="cnt-note">1</span></div>
+        </div>
+        
+        <div id="hint-ui" class="hint-box"></div>
+        <div class="lore-box" id="lore-text"></div>
+        <div id="options-container"></div>
+        <button id="back-btn" style="display:none; border-color:#444; color:#666;" onclick="backtrack()">QUAY LẠI</button>
+    </div>
 
-    // --- CHƯƠNG 3: KIẾN THỨC PHÁP Y ---
-    { t: "MÀN 13", l: "Nạn nhân tử vong trong phòng kín, nhiệt độ cơ thể hạ xuống 0°C.", q: "Môi trường gây tử vong?", opt: ["Nóng", "Lạnh", "Áp suất", "Hóa chất"], a: 1 },
-    { t: "MÀN 14", l: "Vết máu tại hiện trường có nhóm máu chuyên cho.", q: "Nhóm máu đó là?", opt: ["A", "B", "AB", "O"], a: 3 },
-    { t: "MÀN 15", l: "Chất lỏng bạc chảy ra từ nhiệt kế vỡ.", q: "Đây là kim loại độc hại nào?", opt: ["Chì", "Sắt", "Thủy ngân", "Đồng"], a: 2 },
-    { t: "MÀN 16", l: "Xác chết bắt đầu co cứng hoàn toàn sau 12 tiếng.", q: "Hiện tượng này gọi là?", opt: ["Phân hủy", "Co cứng tử thi", "Hóa thạch", "Đông máu"], a: 1 },
-    { t: "MÀN 17", l: "Hung thủ dùng Axit để phi tang vật chứng.", q: "Dùng giấy quỳ tím thử sẽ thấy?", opt: ["Hóa xanh", "Hóa đỏ", "Mất màu", "Không đổi"], a: 1 },
-    { t: "MÀN 18", l: "Vết thương có hình tròn nhỏ, xuyên thấu.", q: "Vũ khí khả nghi nhất?", opt: ["Dao", "Búa", "Súng", "Dây thừng"], a: 2 },
+    <div id="end-screen" class="screen">
+        <h1 id="end-title" style="color:var(--gold)">KẾT QUẢ HỒ SƠ</h1>
+        <table class="result-table">
+            <tr><td>Thám tử:</td><td id="res-name" style="color:var(--neon-blue)"></td></tr>
+            <tr><td>Thời gian:</td><td id="res-time"></td></tr>
+            <tr><td>Vật phẩm dư:</td><td id="res-items"></td></tr>
+            <tr><td><b>TỔNG ĐIỂM:</b></td><td id="res-total" style="color:var(--gold); font-size:1.2rem; font-weight:bold;"></td></tr>
+        </table>
+        <button onclick="location.reload()">LẬP HỒ SƠ MỚI</button>
+    </div>
+</div>
 
-    // --- CHƯƠNG 4: TÂM LÝ TỘI PHẠM ---
-    { t: "MÀN 19", l: "Nhân chứng nói: 'Tôi thấy hắn ta đứng dưới trăng lúc 12h trưa'.", q: "Lời khai này là?", opt: ["Thật", "Dối", "Nhầm lẫn", "Bình thường"], a: 1 },
-    { t: "MÀN 20", l: "Kẻ tình nghi liên tục gãi mũi và tránh ánh mắt thám tử.", q: "Tâm lý này biểu hiện?", opt: ["Tự tin", "Lo lắng/Dối", "Vui vẻ", "Giận dữ"], a: 1 },
-    { t: "MÀN 21", l: "Kẻ trộm chỉ lấy đi những tấm ảnh cũ, bỏ qua vàng bạc.", q: "Động cơ là?", opt: ["Tài chính", "Tình cảm/Kỷ niệm", "Nhầm lẫn", "Thách thức"], a: 1 },
-    { t: "MÀN 22", l: "Hung thủ để lại lời nhắn: 'Câu này là nói dối'.", q: "Logic này gọi là?", opt: ["Sự thật", "Nói dối", "Nghịch lý", "Khẳng định"], a: 2 },
-    { t: "MÀN 23", l: "Một người đứng dưới mưa 30 phút nhưng tóc khô nguyên.", q: "Vì sao?", opt: ["Mưa giả", "Hói đầu/Đội mũ", "Chạy nhanh", "Nín thở"], a: 1 },
-    { t: "MÀN 24", l: "Kẻ sát nhân thường quay lại nơi gây án vì?", opt: ["Quên đồ", "Tự mãn/Quan sát", "Ăn năn", "Đầu thú"], a: 1 },
+<script>
+    const gameTree = {
+        "start": { chapter: "CHƯƠNG I", type: "logic", text: "Vết sơn ĐỎ đè lên VÀNG. Bạn dùng gì để kiểm tra?", options: [{ text: "Phân tích lớp sơn Cam", next: "ch2", isCorrect: true }, { text: "Phá cửa bằng búa", isCorrect: false, hint: "Mất dấu vết!" }] },
+        "ch2": { chapter: "CHƯƠNG II", type: "chemistry", text: "Dung dịch bạc lỏng trong ống nghiệm là gì?", options: [{ text: "Thủy Ngân", next: "ch3", isCorrect: true }, { text: "Cồn 90 độ", isCorrect: false, hint: "Bạc lỏng cơ mà!" }], reward: "kit" },
+        "ch3": { chapter: "CHƯƠNG III", type: "cipher", text: "Mã nhị phân của số 10 là gì?", options: [{ text: "1010", next: "win", isCorrect: true }, { text: "1111", isCorrect: false, hint: "8+2=10" }] },
+        "win": { isWin: true }
+    };
 
-    // --- CHƯƠNG 5: ĐẠI THÁM TỬ ---
-    { t: "MÀN 25", l: "Dãy số tại mật thất: 1, 1, 2, 3, 5, 8...", q: "Số tiếp theo là?", opt: ["11", "12", "13", "15"], a: 2 },
-    { t: "MÀN 26", l: "Tín hiệu đèn: Ngắn-Ngắn-Ngắn | Dài-Dài-Dài | Ngắn-Ngắn-Ngắn.", q: "Thông điệp là?", opt: ["HELLO", "SOS", "HELP", "FIRE"], a: 1 },
-    { t: "MÀN 27", l: "Vết máu văng hình giọt nước có đuôi hướng về bên phải.", q: "Hung thủ di chuyển về phía?", opt: ["Trái", "Phải", "Đứng yên", "Lên trên"], a: 1 },
-    { t: "MÀN 28", l: "Trong phòng có 3 người: A nói B nói dối, B nói C nói dối, C nói A và B nói dối.", q: "Ai nói thật?", opt: ["A", "B", "C", "Không ai"], a: 1 },
-    { t: "MÀN 29", l: "Đồng hồ cát 10 phút đã chảy hết, nến cháy được một nửa.", q: "Hung thủ đã ở đây ít nhất bao lâu?", opt: ["5 phút", "10 phút", "20 phút", "1 tiếng"], a: 1 },
-    { t: "MÀN 30", l: "Manh mối cuối: Kẻ đứng sau tất cả là người đã xuất hiện ở Màn 1.", q: "Hắn là ai?", opt: ["Nạn nhân", "Thám tử", "Hung thủ sơn cam", "Người qua đường"], a: 2 }
-];
+    let pathStack = ["start"];
+    let inventory = { glass: 1, kit: 0, note: 1 };
+    let score = 0;
+    let seconds = 0;
+    let timerInterval;
 
-        function selectItem(item, el) {
-            selectedItem = item;
-            document.querySelectorAll('.item-card').forEach(card => card.classList.remove('selected'));
-            el.classList.add('selected');
-        }
+    function startGame() {
+        if(!document.getElementById('username').value) return alert("Nhập tên!");
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        timerInterval = setInterval(() => { seconds++; document.getElementById('time-val').innerText = seconds; }, 1000);
+        render();
+    }
 
-        function startGame() {
-            if(!document.getElementById('username').value) return alert("Nhập mật danh!");
-            if(!selectedItem) return alert("Hãy chọn một vật phẩm hỗ trợ!");
-            
-            document.getElementById('start-screen').classList.remove('active');
-            document.getElementById('game-screen').classList.add('active');
-            loadLevel();
-        }
+    function render() {
+        const node = gameTree[pathStack[pathStack.length - 1]];
+        if (node.isWin) return finishGame();
 
-        function loadLevel() {
-            if(currentLvl >= quizData.length) return showVictory();
-            
-            // Reset trạng thái vật phẩm cho mỗi màn mới
-            itemUsedInThisLevel = false;
-            const itemBtn = document.getElementById('use-item-btn');
-            itemBtn.disabled = false;
-            itemBtn.innerText = "DÙNG " + selectedItem.toUpperCase();
+        document.getElementById('chapter-name').innerText = node.chapter;
+        document.getElementById('lore-text').innerText = node.text;
+        document.getElementById('score-val').innerText = score;
+        document.getElementById('hint-ui').style.display = "none";
+        document.getElementById('back-btn').style.display = "none";
 
-            const data = quizData[currentLvl];
-            document.getElementById('level-title').innerText = data.t;
-            document.getElementById('lore-text').innerText = data.l;
-            document.getElementById('question-text').innerText = data.q;
-            
-            const container = document.getElementById('options-container');
-            container.innerHTML = "";
-            data.opt.forEach((o, i) => {
-                const btn = document.createElement('button');
-                btn.className = "option-btn";
-                btn.innerText = o;
-                btn.onclick = () => check(i);
-                container.appendChild(btn);
-            });
-            
-            resetTimer();
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timeLeft = 30;
-            updateTimerUI();
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerUI();
-                if(timeLeft <= 0) {
-                    handleWrong();
+        updateInventoryUI();
+        const container = document.getElementById('options-container');
+        container.innerHTML = "";
+        node.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.innerText = opt.text;
+            btn.id = "opt-" + i;
+            btn.onclick = () => {
+                if(opt.isCorrect) {
+                    score += 100; // Thưởng điểm khi đúng
+                    if(node.reward) inventory[node.reward]++;
+                    pathStack.push(opt.next);
+                    render();
+                } else {
+                    score -= 50; // Trừ điểm khi sai
+                    showHint(opt.hint);
                 }
-            }, 1000);
-        }
+            };
+            container.appendChild(btn);
+        });
+    }
 
-        function updateTimerUI() {
-            document.getElementById('timer-text').innerText = timeLeft;
-            const percent = (timeLeft / 30) * 100;
-            const bar = document.getElementById('timer-progress');
-            bar.style.width = percent + "%";
-            bar.style.background = timeLeft < 10 ? "var(--neon-red)" : "var(--neon-blue)";
+    function useItem(type) {
+        if (inventory[type] <= 0) return;
+        const node = gameTree[pathStack[pathStack.length - 1]];
+        if (type === 'glass') {
+            const wIdx = node.options.findIndex(o => !o.isCorrect);
+            if(wIdx !== -1) { document.getElementById('opt-' + wIdx).classList.add('btn-wrong-hidden'); inventory.glass--; }
+        } else if (type === 'kit' && node.type === 'chemistry') {
+            inventory.kit--; score += 50; pathStack.push(node.options.find(o => o.isCorrect).next); render();
+        } else if (type === 'note') {
+            showHint("Gợi ý: " + node.options.find(o => !o.isCorrect).hint); inventory.note--;
         }
+        updateInventoryUI();
+    }
 
-        function useItem() {
-            if(itemUsedInThisLevel) return;
-            itemUsedInThisLevel = true;
-            
-            const itemBtn = document.getElementById('use-item-btn');
-            itemBtn.disabled = true;
-            itemBtn.innerText = "ĐÃ DÙNG";
-
-            if(selectedItem === 'kính lúp') {
-                const btns = document.querySelectorAll('.option-btn');
-                const correctIdx = quizData[currentLvl].a;
-                // Tìm một nút không phải đáp án đúng để ẩn
-                let randomWrong;
-                do {
-                    randomWrong = Math.floor(Math.random() * btns.length);
-                } while (randomWrong === correctIdx);
-                btns[randomWrong].classList.add('wrong');
-            } else if(selectedItem === 'máy quét') {
-                timeLeft += 15;
-                updateTimerUI();
-            } else if(selectedItem === 'sổ tay') {
-                lives++;
-                updateLivesUI();
-            }
+    function updateInventoryUI() {
+        for (let i in inventory) {
+            document.getElementById(`cnt-${i}`).innerText = inventory[i];
+            document.getElementById(`item-${i}`).classList.toggle('available', inventory[i] > 0);
         }
+    }
 
-        function check(idx) {
-            if(idx === quizData[currentLvl].a) {
-                coins += 100;
-                document.getElementById('coin-val').innerText = coins;
-                currentLvl++;
-                loadLevel();
-            } else {
-                handleWrong();
-            }
-        }
+    function showHint(t) {
+        document.getElementById('hint-ui').innerText = t;
+        document.getElementById('hint-ui').style.display = "block";
+        document.getElementById('back-btn').style.display = "block";
+    }
 
-        function handleWrong() {
-            lives--;
-            updateLivesUI();
-            if(lives <= 0) {
-                alert("GAME OVER! Mật danh của bạn đã bị lộ.");
-                location.reload();
-            } else {
-                // Sang màn tiếp theo nếu sai hoặc hết giờ
-                currentLvl++;
-                loadLevel();
-            }
-        }
+    function backtrack() {
+        document.getElementById('hint-ui').style.display = "none";
+        document.getElementById('back-btn').style.display = "none";
+    }
 
-        function updateLivesUI() {
-            let h = "";
-            for(let i=0; i<lives; i++) h += "❤️";
-            document.getElementById('lives-display').innerText = h || "🖤";
-        }
+    function finishGame() {
+        clearInterval(timerInterval);
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('end-screen').classList.add('active');
+        
+        let itemBonus = (inventory.glass + inventory.kit + inventory.note) * 200;
+        let timeBonus = Math.max(0, 1000 - (seconds * 5));
+        let total = score + itemBonus + timeBonus;
 
-        function showVictory() {
-            clearInterval(timerInterval);
-            document.getElementById('game-screen').classList.remove('active');
-            document.getElementById('victory-screen').classList.add('active');
-            document.getElementById('final-stats').innerHTML = `
-                <p>Thám tử: <strong>${document.getElementById('username').value}</strong></p>
-                <p>Tổng tài sản: <span style="color:var(--gold)">${coins} 🪙</span></p>
-                <p>Trang bị đã dùng: ${selectedItem.toUpperCase()}</p>
-            `;
-        }
-    </script>
+        document.getElementById('res-name').innerText = document.getElementById('username').value;
+        document.getElementById('res-time').innerText = seconds + " giây";
+        document.getElementById('res-items').innerText = (inventory.glass + inventory.kit + inventory.note);
+        document.getElementById('res-total').innerText = total;
+    }
+</script>
 </body>
 </html>
